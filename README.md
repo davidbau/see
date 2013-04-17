@@ -15,38 +15,51 @@ Overview
 See can be used to debug a nested scope by making a call to
 eval(see.scope('myscope')); within the scope of interest.
 For example, the following nicely encapsulated code would normally
-be difficult to debug without the added see lines:
+be difficult to debug without the added see line:
 
 <pre>
-see.init();
 (function() {
-  eval(see.scope('wrap'));
   var private_var = 0;
   function myclosuremaker() {
-    eval(see.scope('inner'));
+    eval(see.init());
     var counter = 0;
     return function() { ++counter; }
   }
   var inc = myclosuremaker();
+  inc();
 })();
 </pre>
 
+The debugging eval panel shown by see will evaluate variables from
+the local nested scope within myclosuremaker.  In other words,
+"counter" and "private_var" will both be visible.
+
+It is possible to define multiple scopes for a single debugging session
+by adding the following at the scope of interest:
+
+<pre>
+eval(see.scope('scopename'));
+</pre>
+
 To switch scopes within the interactive panel, just enter ":" followed
-by the scope name, for example, ":inner", or ":wrap" in the example above.
+by the scope name, for example, ":scopename".  ":top" goes to global
+scope, and ":" goes back to the default scope defined at init.
 
-An eval function passed to init will be used for the default scope (":").
+![Screenshot of see panel](see-usage.png?raw=true)
 
-Here it how to initialize see to interpret CoffeeScript at the current scope:
+It is also possible to use CoffeeScript as the eval language, which is
+useful when using see.js as a teaching tool.  Here it how to initialize
+see to interpret CoffeeScript at the current scope:
 
 <pre>
 see.init(eval(see.cs))
 </pre>
 
 The see package can also be used for normal logging, similar to
-console.log, but producing output within the document itself.  Calling
-see as a function will log a tree representation of the arguments.
-The logged objects will be traversed to a fixed depth (default 5) at
-the moment they are logged, instead of later when you expand the tree.
+console.log, but producing output within the see panel shown in the
+document itself.  Calling see as a function will log a tree
+representation of the arguments.  The logged objects will be traversed
+to a fixed depth (default 5) as soon as they are logged.
 
 Detailed usage
 --------------
