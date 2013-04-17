@@ -1,10 +1,12 @@
-// see.js
+// see.js version 0.1
 //
-// An simple interactive eval tool for JavaScript.
+// A simple interactive eval tool for JavaScript.
 //
-// Provides an interactive eval panel that can be used to inspect
-// variable state within nested scopes.  Also provides a simple
-// in-page logging facility with tree view inspection of objects.
+// The see.js interactive eval panel can be used to inspect
+// variable state within nested scopes, such as closures and
+// other nested functions.  It provides a friendly in-page
+// logging facility with tree view inspection of objects; and
+// it is friendly to both JavaScript and CoffeeScript.
 //
 // Overview:
 //
@@ -133,7 +135,7 @@ function init(options) {
   if (panel) {
     // panel overrides element and autoscroll.
     logelement = '#_testlog';
-    autoscroll = '#_testpanel';
+    autoscroll = '#_testscroll';
     loadjQueryIfNotPresent(tryinitpanel);
   }
   var suffix = '';
@@ -621,9 +623,11 @@ function stickscroll() {
     stick = a.scrollHeight - a.scrollTop - 10 <= a.clientHeight;
   }
   if (stick) {
-    setTimeout(function() {
+    return (function() {
       a.scrollTop = a.scrollHeight - a.clientHeight;
-    }, 0);
+    });
+  } else {
+    return (function() {});
   }
 }
 function flushqueue() {
@@ -633,10 +637,11 @@ function flushqueue() {
     var temp = window.document.createElement('div');
     temp.innerHTML = queue.join('');
     queue.length = 0;
-    stickscroll();
+    var complete = stickscroll();
     while ((child = temp.firstChild)) {
       elt.appendChild(child);
     }
+    complete();
   }
   if (!retrying && queue.length) {
     retrying = setTimeout(function() { timer = null; flushqueue(); }, 100);
@@ -676,17 +681,20 @@ function tryinitpanel() {
       var titlehtml = (paneltitle ?
         '<div class="_log" style="color:gray;">' + paneltitle + '</div>' : '');
       $('body').prepend(
-        '<div id="_testpanel" style="overflow-y:scroll;overflow-x:hidden;' +
+        '<div id="_testpanel" style="overflow:hidden;' +
             'position:fixed;bottom:0;left:0;width:100%;height:' + panelheight +
             'px;background:whitesmoke;font:10pt monospace;">' +
-          '<div id="_testdrag" style="position:fixed;z-index:1;' +
-              'cursor:row-resize;margin-top:-6px;height:6px;width:100%;' +
+          '<div id="_testdrag" style="' +
+              'cursor:row-resize;height:6px;width:100%;' +
               'background:lightgray"></div>' +
-          '<div id="_testlog">' + titlehtml + '</div>' +
-          '<div style="position:relative;">' +
-          promptcaret('blue') +
-          '<input id="_testinput" class="_log" style="width:100%;' +
-              'padding-left:1em;margin:0;border:0;font:inherit;">' +
+          '<div id="_testscroll" style="overflow-y:scroll;overflow-x:hidden;' +
+              'width:100%;height:' + (panelheight - 6) + 'px;">' +
+            '<div id="_testlog">' + titlehtml + '</div>' +
+            '<div style="position:relative;">' +
+            promptcaret('blue') +
+            '<input id="_testinput" class="_log" style="width:100%;' +
+                'padding-left:1em;margin:0;border:0;font:inherit;">' +
+           '</div>' +
         '</div>');
       addedpanel = true;
       var history = [];
@@ -744,8 +752,6 @@ function tryinitpanel() {
             var result = ef.call(et, text);
             if ((typeof result) != 'undefined') {
               loghtml(repr(result));
-            } else {
-              stickscroll();
             }
           } catch (e) {
             see(e);
@@ -773,8 +779,12 @@ function tryinitpanel() {
         if (drag.setCapture) { drag.setCapture(true); }
         dragfunc = function dragresize(e) {
           if (e.type != 'blur' && e.which == dragwhich) {
-            $('#_testpanel').height(Math.max(0,
-                Math.min($(window).height() - barheight, dragsum - e.pageY)));
+            var newheight = Math.max(0, Math.min($(window).height() - barheight,
+                dragsum - e.pageY));
+            var complete = stickscroll();
+            $('#_testpanel').height(newheight);
+            $('#_testscroll').height(newheight - barheight);
+            complete();
           }
           if (e.type == 'mouseup' || e.type == 'blur' ||
               e.type == 'mousemove' && e.which != dragwhich) {
@@ -788,9 +798,9 @@ function tryinitpanel() {
       $('#_testpanel').on('mouseup', function(e) {
         if (getSelectedText()) { return; }
         // Focus without scrolling.
-        var scrollpos = $('#_testpanel').scrollTop();
+        var scrollpos = $('#_testscroll').scrollTop();
         $('#_testinput').focus();
-        $('#_testpanel').scrollTop(scrollpos);
+        $('#_testscroll').scrollTop(scrollpos);
       });
     }
   }
