@@ -23,7 +23,7 @@ added see line:
 (function() {
   var private_var = 0;
   function myclosuremaker() {
-    <span style="background:yellow">eval(see.init());</span>
+    <b style="background:yellow">eval(see.init());</b>
     var counter = 0;
     return function() { ++counter; }
   }
