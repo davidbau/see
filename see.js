@@ -1,75 +1,100 @@
 // see.js version 0.1
 //
-// A simple interactive eval tool for JavaScript.
+// see.js: See and debug local variables.
 //
 // The see.js interactive eval panel can be used to inspect
-// variable state within nested scopes, such as closures and
-// other nested functions.  It provides a friendly in-page
-// logging facility with tree view inspection of objects; and
-// it is friendly to both JavaScript and CoffeeScript.
+// and change local variable state within nested scopes and
+// closures without stopping at breakpoints first.  This
+// package also provides a simple in-page logging facility
+// with tree view inspection of objects, and it provides support
+// for both JavaScript and CoffeeScript.
 //
-// Overview:
+// Overview
+// --------
 //
-// See can be used to debug a nested scope by making a call to
-// eval(see.scope('myscope')); within the scope of interest.
-// For example, the following nicely encapsulated code would normally
-// be difficult to debug without the added see lines:
+// Any local scope can be debugged by calling eval(see.init())
+// within the scope of interest.  For example, the following nicely
+// encapsulated code would normally be painful to debug without the
+// added see line:
 //
-// see.init();
 // (function() {
-//   eval(see.scope('wrap'));
 //   var private_var = 0;
 //   function myclosuremaker() {
-//     eval(see.scope('inner'));
+//     eval(see.init());
 //     var counter = 0;
 //     return function() { ++counter; }
 //   }
 //   var inc = myclosuremaker();
+//   inc();
 // })();
 //
+// When see.init() is called, it shows a debugging eval panel at
+// the bottom of the page, and it returns a bit of script that,
+// when evaled, sets up an eval closure in the current scope.
+//
+// The debugging eval panel works like the Firebug or Chrome debugger
+// console, except that it has visibility into local variable scope.
+// In this example, "counter" and "private_var" and "inc" and
+// "myclosuremaker" will all be visible symbols that can be used and
+// manipulated.
+//
+// It is also possible to attach to multiple scopes with a single program
+// by adding the following at the scope of interest:
+//
+// eval(see.scope('scopename'));
+//
 // To switch scopes within the interactive panel, just enter ":" followed
-// by the scope name, for example, ":inner", or ":wrap" in the example above.
+// by the scope name, for example, ":scopename".  ":top" goes to global
+// scope, and ":" goes back to the default scope defined at init.
 //
-// An eval function passed to init will be used for the default scope (":").
+// The see.js script originally started as a teaching tool in a
+// CoffeeScript environment, so it also supports use of CoffeeScript
+// as the console language.  Here it how to initialize see.js to
+// interpret code entered in the panel as CoffeeScript instead of
+// Javascript:
 //
-// Here it how to initialize see to interpret CoffeeScript at the current scope:
+// see.init(eval(see.cs))
 //
-//   see.init(eval(see.cs))
+// The top-level see function logs output to the see panel.  Logged
+// objects are shown in a tree view of the object state at the
+// moment when the object is logged.
 //
-// The see package can also be used for normal logging, similar to
-// console.log, but producing output within the document itself.  Calling
-// see as a function will log a tree representation of the arguments.
-// The logged objects will be traversed to a fixed depth (default 5) at
-// the moment they are logged, instead of later when you expand the tree.
+// see(a, b, c);
 //
-// Detailed usage:
 //
-//   see.init();               // Creates the interactive panel.
-//   see.init({height: 30, title: 'test panel'});   // Sets some options.
-//   eval(see.init());         // Sets the default scope to local scope.
-//   see.loghtml();            // Logs HTML without escaping.
-//   r = see.repr(a, 3);       // Builds a tree representation of a to depth 3.
-//   see.noconflict();         // Restores window.see to its old value.
-//   eval(see.scope('name'));  // Type ":name" in the panel to use this scope. 
-//   see(a, b, c);             // Logs values into the panel.
+// Detailed usage
+// --------------
 //
-// Options to pass to init:
+// see.init();               // Creates the interactive panel.
+// see.init({height: 30, title: 'test panel'});   // Sets some options.
+// eval(see.init());         // Sets the default scope to local scope.
+// eval(see.scope('name'));  // Type ":name" in the panel to use this scope.
+// see(a, b, c);             // Logs values into the panel.
+// see.loghtml('<b>ok</b>'); // Logs HTML without escaping.
+// r = see.repr(a, 3);       // Builds a tree representation of a to depth 3.
+// x = see.noconflict();     // Relinquishes the 'see' global name; use 'x'.
 //
-//   eval: The default function (or closure) to use to evaluate expressions.
-//   this: The object to use as "this" within the evaluation.
-//   depth: The depth to which to traverse logged and evaluated objects.
-//   height: The pixel height of the interactive panel.
-//   title: A title shown at the top of the panel.
-//   panel: false if no interactive panel is desired.
-//   console: set to window.console to echo logging to the console also.
-//   history: set to false to disable localStorage use for interactive history.
-//   linestyle: css style for a single log line.
-//   element: (if panel is false) - the element into which to logging is done.
-//   autoscroll: (if panel is false) - the element to autoscroll to bottom.
-//   jQuery: the page's local copy of jQuery to reuse.
-//   coffee: the CoffeeScript compiler object, for coffeescript support.
+// Options to pass to init
+// -----------------------
 //
-// Some implementation notes on interactions:
+// eval  The default function (or closure) to use to evaluate expressions.
+// this  The object to use as "this" within the evaluation.
+// depth  The depth to which to traverse logged and evaluated objects.
+// height  The pixel height of the interactive panel.
+// title  A title shown at the top of the panel.
+// panel  false if no interactive panel is desired.
+// console  Set to window.console to echo logging to the console also.
+// history  Set to false to disable localStorage use for interactive history.
+// linestyle  CSS style for a single log line.
+// element  (if panel is false) - The element into which to logging is done.
+// autoscroll  (if panel is false) - The element to autoscroll to bottom.
+// jQuery  The page's local copy of jQuery to reuse.
+// coffee  The CoffeeScript compiler object, for coffeescript support.
+// noconflict  The name to use instead of "see".
+//
+//
+// Some implementation notes on interactions
+// -----------------------------------------
 //
 // When see.init() is called, a private (noconflict) copy of jQuery is
 // loaded if jQuery is not already present on the page (unless the 'panel'
@@ -81,13 +106,7 @@
 (function() {
 
 var seepkg = 'see'; // Defines the global package name used.
-var hasoldsee = window.hasOwnProperty(seepkg);
-var didnoconflict = false;
-var oldsee;
-if (hasoldsee) {
-  oldsee = window[seepkg];
-}
-
+var oldvalue = noteoldvalue(seepkg);
 // Option defaults
 var $ = window.jQuery;
 var evalfunction = window.eval;
@@ -107,7 +126,6 @@ var currentscope = '';
 var scopes = { top: { e: window.eval, t: window } };
 var coffeescript = window.CoffeeScript;
 var seejs = '(function(){return eval(arguments[0]);})';
-var seecs = '(function(){return eval(' + seepkg + '.barecs(arguments[0]));})';
 
 function init(options) {
   if (arguments.length === 0) {
@@ -132,17 +150,14 @@ function init(options) {
   if (options.hasOwnProperty('console')) { logconsole = options.console; }
   if (options.hasOwnProperty('history')) { uselocalstorage = options.history; }
   if (options.hasOwnProperty('coffee')) { coffeescript = options.coffee; }
+  if (options.hasOwnProperty('noconflict')) { noconflict(options.noconflict); }
   if (panel) {
     // panel overrides element and autoscroll.
     logelement = '#_testlog';
     autoscroll = '#_testscroll';
     loadjQueryIfNotPresent(tryinitpanel);
   }
-  var suffix = '';
-  if (options.noconflict) {
-    suffix = seepkg + '.noconflict();';
-  }
-  return scope() + suffix;
+  return scope();
 }
 
 function scope(name, evalfunc, evalthis) {
@@ -179,19 +194,36 @@ function exportsee() {
   see.scope = scope;
   see.barecs = barecs;
   see.js = seejs;
-  see.cs = seecs;
+  see.cs = '(function(){return eval(' + seepkg + '.barecs(arguments[0]));})';
   window[seepkg] = see;
 }
 
-function noconflict() {
-  if (!didnoconflict) {
-    if (!hasoldsee) {
-      delete window[seepkg];
-    } else {
-      window[seepkg] = oldsee;
-    }
-    didnoconflict = true;
+function noteoldvalue(name) {
+  return {
+    name: name,
+    has: window.hasOwnProperty(name),
+    value: window[name],
+  };
+}
+
+function restoreoldvalue(old) {
+  if (!old.has) {
+    delete window[old.name];
+  } else {
+    window[old.name] = old.value;
   }
+}
+
+function noconflict(newname) {
+  if (!newname || typeof(newname) != 'string') {
+    newname = 'see' + (1 + Math.random() + '').substr(2);
+  }
+  if (oldvalue) {
+    restoreoldvalue(oldvalue);
+  }
+  seepkg = newname;
+  oldvalue = noteoldvalue(newname);
+  exportsee();
   return see;
 }
 
@@ -323,10 +355,16 @@ function tiny(obj, maxlen) {
   if (vt == 'Object' && isshort(obj)) { return '{}'; }
   if (isdom(obj) && obj.nodeType == 1) {
     if (obj.hasAttribute('id')) {
-      return '&lt;' + obj.tagName.toLowerCase() +
-          ' id="' + htmlescape(obj.getAttribute('id')) + '"&gt;';
+      return obj.tagName.toLowerCase() +
+          '#' + htmlescape(obj.getAttribute('id'));
     } else {
-      return '&lt;' + obj.tagName.toLowerCase() + '&gt;';
+      if (obj.hasAttribute('class')) {
+        var classname = obj.getAttribute('class').split(' ')[0];
+        if (classname) {
+          return obj.tagName.toLowerCase() + '.' + htmlescape(classname);
+        }
+      }
+      return obj.tagName.toLowerCase();
     }
   }
   return vt;
@@ -369,8 +407,9 @@ function isshort(obj, shallow, maxlen) {
   return true;
 }
 function domsummary(dom, maxlen) {
-  if ('outerHTML' in dom) {
-    var short = isshort(dom, maxlen);
+  var short;
+  if (false && 'outerHTML' in dom) {
+    short = isshort(dom, true, maxlen);
     var html = dom.cloneNode(short).outerHTML;
     var tail = null;
     if (!short) {
@@ -384,13 +423,16 @@ function domsummary(dom, maxlen) {
   }
   if (dom.nodeType == 1) {
     var parts = ['<' + dom.tagName];
-    var attrlen = 5 + Math.floor(maxlen /
-        Math.max(5, Math.min(1, attributes.length)));
     for (var j = 0; j < dom.attributes.length; ++j) {
-      parts.push(domsummary(dom.attributes[j], attrlen));
+      parts.push(domsummary(dom.attributes[j], maxlen)[0]);
     }
-    return [htmlescape(parts.join(' ') + '>'),
-        !dom.firstChild ? null : '</' + dom.tagName + '>'];
+    short = isshort(dom, true, maxlen);
+    if (short && dom.firstChild) {
+      return [htmlescape(parts.join(' ') + '>' +
+          dom.firstChild.textContent + '</' + dom.tagName + '>'), null];
+    }
+    return [htmlescape(parts.join(' ') + (dom.firstChild? '>' : '/>')),
+        !dom.firstChild ? null : htmlescape('</' + dom.tagName + '>')];
   }
   if (dom.nodeType == 2) {
     return [htmlescape(dom.name + '="' +
@@ -768,6 +810,8 @@ function tryinitpanel() {
               history[history.length - historyindex];
           if (typeof newval == 'undefined') { newval = ''; }
           $(this).val(newval);
+          this.selectionStart = this.selectionEnd = newval.length;
+          e.preventDefault();
         }
       });
       $('#_testdrag').on('mousedown', function(e) {
