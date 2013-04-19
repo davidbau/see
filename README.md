@@ -3,12 +3,13 @@ see
 
 see.js: See and debug local variables.
 
-The see.js interactive eval panel can be used to inspect
-and change local variable state within nested scopes and
-closures without stopping at breakpoints first.  This
-package also provides a simple in-page logging facility
-with tree view inspection of objects, and it provides support
-for both JavaScript and CoffeeScript.
+The see.js debugger can be used to inspect and change local variable
+state without stopping at breakpoints.  This is a good solution for
+debugging code wrapped in a top-level anonymous closure or for
+debugging more complicated uses of closures.  The see.js debugger
+also provides simple in-page logging with tree view inspection of
+objects; and it provides support for debugging using CoffeeScript.
+
 
 Overview
 --------
@@ -22,7 +23,7 @@ added see line:
 (function() {
   var private_var = 0;
   function myclosuremaker() {
-    eval(see.init());
+    <span style="background:yellow">eval(see.init());</span>
     var counter = 0;
     return function() { ++counter; }
   }
@@ -31,17 +32,21 @@ added see line:
 })();
 </pre>
 
-When see.init() is called, it shows a debugging eval panel at
-the bottom of the page, and it returns a bit of script that,
-when evaled, sets up an eval closure in the current scope.
+When see.init() is called, a simple debugger is shown at the
+bottom of the page, and the return value is a bit of script that,
+when evaled, sets up an eval closure witin the current scope.
 
-The debugging eval panel works like the Firebug or Chrome debugger
-console, except that it has visibility into local variable scope.
-In this example, "counter" and "private_var" and "inc" and
-"myclosuremaker" will all be visible symbols that can be used and
-manipulated.
+The debugging panel works like the Firebug or Chrome debugger
+console, except that it uses the eval loop to give visibility into
+local variable scope.  In this example, "counter" and "private_var"
+and "inc" and "myclosuremaker" will all be visible symbols that
+can be used and manipulated in the debugger.
 
-It is also possible to attach to multiple scopes with a single program
+
+Debugging multiple scopes
+-------------------------
+
+It is possible to attach to multiple scopes with a single program
 by adding the following at the scope of interest:
 
 <pre>
@@ -54,6 +59,10 @@ scope, and ":" goes back to the default scope defined at init.
 
 ![Screenshot of see panel](see-usage.png?raw=true)
 
+
+CoffeeScript
+------------
+
 The see.js script originally started as a teaching tool in a
 CoffeeScript environment, so it also supports use of CoffeeScript
 as the console language.  Here it how to initialize see.js to
@@ -64,6 +73,10 @@ Javascript:
 see.init(eval(see.cs))
 </pre>
 
+
+Logging
+-------
+
 The top-level see function logs output to the see panel.  Logged
 objects are shown in a tree view of the object state at the
 moment when the object is logged.
@@ -73,8 +86,8 @@ see(a, b, c);
 </pre>
 
 
-Detailed usage
---------------
+More examples of usage
+----------------------
 
 <pre>
 see.init();               // Creates the interactive panel.
@@ -86,6 +99,7 @@ see.loghtml('&lt;b>ok&lt;/b>'); // Logs HTML without escaping.
 r = see.repr(a, 3);       // Builds a tree representation of a to depth 3.
 x = see.noconflict();     // Relinguishes use of the 'see' name; use 'x'.
 </pre>
+
 
 Options to pass to init
 -----------------------
@@ -106,12 +120,22 @@ Options to pass to init
 <tr><td>noconflict</td><td>Name to use instead of "see".</td></tr>
 </table>
 
-Some implementation notes on interactions
------------------------------------------
+
+Implementation notes
+--------------------
+
+If eval(see.init()) or eval(see.scope('name')) is called multiple
+times for the same name, the scope is reset to the last scope set.
+If multiple closures are created at the same line of code, that means that
+you will only see the last one.  You can generate a name using
+eval(see.scope('name' + index)) if you want to preserve visibility
+into many scopes.
 
 When see.init() is called, a private (noconflict) copy of jQuery is
-loaded if jQuery is not already present on the page (unless the 'panel'
-option is false, or the 'jQuery' option is explicity supplied).
+loaded if window.jQuery is not already present on the page (unless
+the 'panel' option is false, or the 'jQuery' option is explicity
+supplied to init).
 
 Every expression entered in the panel is stored to '_loghistory' in
-localStorage unless the 'history' option is set to false.
+localStorage unless the 'history' option set to a different key name, or
+set to false to disable history persistence.
