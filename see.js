@@ -408,7 +408,7 @@ function isshort(obj, shallow, maxlen) {
 }
 function domsummary(dom, maxlen) {
   var short;
-  if (false && 'outerHTML' in dom) {
+  if ('outerHTML' in dom) {
     short = isshort(dom, true, maxlen);
     var html = dom.cloneNode(short).outerHTML;
     var tail = null;
