@@ -12,7 +12,7 @@
 // Overview
 // --------
 //
-// Any local scope can be debugged by calling eval(see.init())
+// Any local scope can be debugged by calling eval(see.here)
 // within the scope of interest.  For example, the following nicely
 // encapsulated code would normally be painful to debug without the
 // added see line:
@@ -20,7 +20,7 @@
 // (function() {
 //   var private_var = 0;
 //   function myclosuremaker() {
-//     eval(see.init());
+//     eval(see.here);
 //     var counter = 0;
 //     return function() { ++counter; }
 //   }
@@ -28,9 +28,9 @@
 //   inc();
 // })();
 //
-// When see.init() is called, it shows a debugging eval panel at
-// the bottom of the page, and it returns a bit of script that,
-// when evaled, sets up an eval closure in the current scope.
+// When eval(see.here) is called, it shows a debugging eval panel at
+// the bottom of the page and sets up an eval closure in the current
+// local scope.
 //
 // The debugging eval panel works like the Firebug or Chrome debugger
 // console, except that it has visibility into local variable scope.
@@ -45,7 +45,7 @@
 //
 // To switch scopes within the interactive panel, just enter ":" followed
 // by the scope name, for example, ":scopename".  ":top" goes to global
-// scope, and ":" goes back to the default scope defined at init.
+// scope, and ":" goes back to the default scope defined with see.here.
 //
 // The see.js script originally started as a teaching tool in a
 // CoffeeScript environment, so it also supports use of CoffeeScript
@@ -109,8 +109,6 @@ var seepkg = 'see'; // Defines the global package name used.
 var oldvalue = noteoldvalue(seepkg);
 // Option defaults
 var $ = window.jQuery;
-var evalfunction = window.eval;
-var evalthis = window;
 var linestyle = 'position:relative;font-family:monospace;' +
   'word-break:break-all;margin-bottom:3px;padding-left:1em;';
 var logdepth = 5;
@@ -123,7 +121,10 @@ var logconsole = null;
 var uselocalstorage = '_loghistory';
 var panelheight = 100;
 var currentscope = '';
-var scopes = { top: { e: window.eval, t: window } };
+var scopes = {
+  '':  { e: window.eval, t: window },
+  top: { e: window.eval, t: window }
+};
 var coffeescript = window.CoffeeScript;
 var seejs = '(function(){return eval(arguments[0]);})';
 
@@ -138,8 +139,8 @@ function init(options) {
     options = {'eval': arguments[0]};
   }
   if (options.hasOwnProperty('jQuery')) { $ = options.jQuery; }
-  if (options.hasOwnProperty('eval')) { evalfunction = options['eval']; }
-  if (options.hasOwnProperty('this')) { evalthis = options['this']; }
+  if (options.hasOwnProperty('eval')) { scopes[''].e = options['eval']; }
+  if (options.hasOwnProperty('this')) { scopes[''].t = options['this']; }
   if (options.hasOwnProperty('element')) { logelement = options.element; }
   if (options.hasOwnProperty('autoscroll')) { autoscroll = options.autoscroll; }
   if (options.hasOwnProperty('linestyle')) { linestyle = options.linestyle; }
@@ -160,14 +161,27 @@ function init(options) {
   return scope();
 }
 
-function scope(name, evalfunc, evalthis) {
+function scope(name, evalfuncarg, evalthisarg) {
   if (arguments.length <= 1) {
     if (!arguments.length) {
       name = '';
     }
-    return seepkg + '.scope(' + cstring(name) + ',' + seejs + ')';
+    return seepkg + '.scope(' + cstring(name) + ',' + seejs + ',this)';
   }
-  scopes[name] = { e: evalfunc, t: evalthis };
+  scopes[name] = { e: evalfuncarg, t: evalthisarg };
+}
+
+function seeeval(scope, code) {
+  if (arguments.length == 1) {
+    code = scope;
+    scope = '';
+  }
+  var ef = scopes[''].e, et = scopes[''].t;
+  if (scopes.hasOwnProperty(scope)) {
+    if (scopes[scope].e) { ef = scopes[scope].e; }
+    if (scopes[scope].t) { et = scopes[scope].t; }
+  }
+  return ef.call(et, code);
 }
 
 var varpat = '[_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*';
@@ -192,7 +206,9 @@ function exportsee() {
   see.noconflict = noconflict;
   see.init = init;
   see.scope = scope;
+  see.eval = seeeval;
   see.barecs = barecs;
+  see.here = 'eval(' + seepkg + '.init())';
   see.js = seejs;
   see.cs = '(function(){return eval(' + seepkg + '.barecs(arguments[0]));})';
   window[seepkg] = see;
@@ -785,13 +801,8 @@ function tryinitpanel() {
             return;
           }
           // Actually execute the command and log the results (or error).
-          var ef = evalfunction, et = evalthis;
           try {
-            if (scopes.hasOwnProperty(currentscope)) {
-              if (scopes[currentscope].e) { ef = scopes[currentscope].e; }
-              if (scopes[currentscope].t) { et = scopes[currentscope].t; }
-            }
-            var result = ef.call(et, text);
+            var result = seeeval(currentscope, text);
             if ((typeof result) != 'undefined') {
               loghtml(repr(result));
             }
@@ -823,7 +834,8 @@ function tryinitpanel() {
         if (drag.setCapture) { drag.setCapture(true); }
         dragfunc = function dragresize(e) {
           if (e.type != 'blur' && e.which == dragwhich) {
-            var newheight = Math.max(0, Math.min($(window).height() - barheight,
+            var winheight = window.innerHeight || $(window).height();
+            var newheight = Math.max(barheight, Math.min(winheight,
                 dragsum - e.pageY));
             var complete = stickscroll();
             $('#_testpanel').height(newheight);

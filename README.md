@@ -4,17 +4,21 @@ see
 see.js: See and debug local variables.
 
 The see.js debugger can be used to inspect and change local variable
-state without stopping at breakpoints.  This is a good solution for
-debugging code wrapped in a top-level anonymous closure or for
+state when you are not stopped at a breakpoint.  This is a good solution
+for debugging code wrapped in a top-level anonymous closure or for
 debugging more complicated uses of closures.  The see.js debugger
 also provides simple in-page logging with tree view inspection of
 objects; and it provides support for debugging using CoffeeScript.
+
+Load see.js in your program, or use
+[this bookmarklet](javascript:%28function%28%29{function%20a%28a,b%29{function%20c%28a,b%29{a.onload=a.onreadystatechange=b}var%20d=document.createElement%28%22script%22%29,e=document.getElementsByTagName%28%22head%22%29[0],f=1;c%28d,function%28%29{f&&%28!d.readyState||{loaded%3A1,complete%3A1}[d.readyState]%29&&%28f=0,b%28%29,c%28d,null%29,e.removeChild%28d%29%29}%29,d.src=a,e.appendChild%28d%29}a%28%22//raw.github.com/davidbau/see/master/see.js%22,function%28%29{see.init%28%29}%29}%29%28%29)
+to open the see debugger in any program.
 
 
 Overview
 --------
 
-Any local scope can be debugged by calling eval(see.init())
+Any local scope can be debugged by calling eval(see.here)
 within the scope of interest.  For example, the following nicely
 encapsulated code would normally be painful to debug without the
 added see line:
@@ -23,7 +27,7 @@ added see line:
 (function() {
   var private_var = 0;
   function myclosuremaker() {
-    <b>eval(see.init());</b>  // Debug variables visible in this scope.
+    <b>eval(see.here);</b>  // Debug variables visible in this scope.
     var counter = 0;
     return function() { ++counter; }
   }
@@ -32,12 +36,11 @@ added see line:
 })();
 </pre>
 
-When see.init() is called, a simple debugger is shown at the
-bottom of the page, and the return value is a bit of script that,
-when evaled, sets up an eval closure witin the current scope.
+When eval(see.here) is called, the see debugger is shown at the
+bottom of the page, an en eval hook is set up within the current scope.
 
 The debugging panel works like the Firebug or Chrome debugger
-console, except that it uses the eval loop to give visibility into
+console, except that it uses the eval hook to give visibility into
 local variable scope.  In this example, "counter" and "private_var"
 and "inc" and "myclosuremaker" will all be visible symbols that
 can be used and manipulated in the debugger.
@@ -58,6 +61,19 @@ by the scope name, for example, ":scopename".  ":top" goes to global
 scope, and ":" goes back to the default scope defined at init.
 
 ![Screenshot of see panel](see-usage.png?raw=true)
+
+
+Bookmarklet
+-----------
+
+[This bookmarklet](javascript:%28function%28%29{function%20a%28a,b%29{function%20c%28a,b%29{a.onload=a.onreadystatechange=b}var%20d=document.createElement%28%22script%22%29,e=document.getElementsByTagName%28%22head%22%29[0],f=1;c%28d,function%28%29{f&&%28!d.readyState||{loaded%3A1,complete%3A1}[d.readyState]%29&&%28f=0,b%28%29,c%28d,null%29,e.removeChild%28d%29%29}%29,d.src=a,e.appendChild%28d%29}a%28%22//raw.github.com/davidbau/see/master/see.js%22,function%28%29{see.init%28%29}%29}%29%28%29)
+loads the see.js debugger on any page.
+
+When you are using the bookmarklet, eval(see.here) calls
+may not be present in the code, but it is possible to insert the
+see eval loop by evaluating using your regular (Chrome or Firebug)
+debugger to run eval(see.here) when at a breakpoint in the scope
+of interest.
 
 
 CoffeeScript
@@ -86,13 +102,23 @@ see(a, b, c);
 </pre>
 
 
+Using the regular debugger
+--------------------------
+
+To inspect an object visible to see in the regular debugger, just
+use see.eval('mylocal'), which evaluates the expression in the scope
+of interest and returns the value.  To focus on a different named
+scope, use the two-argument form, see.eval('scopename', 'myexpression').
+
+
+
 More examples of usage
 ----------------------
 
 <pre>
-see.init();               // Creates the interactive panel.
+see.init();               // Creates the interactive panel with global scope.
 see.init({height: 30, title: 'test panel'});   // Sets some options.
-eval(see.init());         // Sets the default scope to local scope.
+eval(see.init());         // Does the same thing as eval(see.here).
 eval(see.scope('name'));  // Type ":name" in the panel to use this scope.
 see(a, b, c);             // Logs values into the panel.
 see.loghtml('&lt;b>ok&lt;/b>'); // Logs HTML without escaping.
