@@ -10,10 +10,6 @@ debugging more complicated uses of closures.  The see.js debugger
 also provides simple in-page logging with tree view inspection of
 objects; and it provides support for debugging using CoffeeScript.
 
-Load see.js in your program, or use
-[this bookmarklet](javascript:%28function%28%29{function%20a%28a,b%29{function%20c%28a,b%29{a.onload=a.onreadystatechange=b}var%20d=document.createElement%28%22script%22%29,e=document.getElementsByTagName%28%22head%22%29[0],f=1;c%28d,function%28%29{f&&%28!d.readyState||{loaded%3A1,complete%3A1}[d.readyState]%29&&%28f=0,b%28%29,c%28d,null%29,e.removeChild%28d%29%29}%29,d.src=a,e.appendChild%28d%29}a%28%22//raw.github.com/davidbau/see/master/see.js%22,function%28%29{see.init%28%29}%29}%29%28%29)
-to open the see debugger in any program.
-
 
 Overview
 --------
@@ -66,8 +62,11 @@ scope, and ":" goes back to the default scope defined at init.
 Bookmarklet
 -----------
 
-[This bookmarklet](javascript:%28function%28%29{function%20a%28a,b%29{function%20c%28a,b%29{a.onload=a.onreadystatechange=b}var%20d=document.createElement%28%22script%22%29,e=document.getElementsByTagName%28%22head%22%29[0],f=1;c%28d,function%28%29{f&&%28!d.readyState||{loaded%3A1,complete%3A1}[d.readyState]%29&&%28f=0,b%28%29,c%28d,null%29,e.removeChild%28d%29%29}%29,d.src=a,e.appendChild%28d%29}a%28%22//raw.github.com/davidbau/see/master/see.js%22,function%28%29{see.init%28%29}%29}%29%28%29)
-loads the see.js debugger on any page.
+This URL can be used as a bookmarklet that loads see.js on any page.
+
+<pre>
+javascript:%28function%28%29{function%20a%28a,b%29{function%20c%28a,b%29{a.onload=a.onreadystatechange=b}var%20d=document.createElement%28%22script%22%29,e=document.getElementsByTagName%28%22head%22%29[0],f=1;c%28d,function%28%29{f&&%28!d.readyState||{loaded%3A1,complete%3A1}[d.readyState]%29&&%28f=0,b%28%29,c%28d,null%29,e.removeChild%28d%29%29}%29,d.src=a,e.appendChild%28d%29}a%28%22//raw.github.com/davidbau/see/master/see.js%22,function%28%29{see.init%28%29}%29}%29%28%29)
+</pre>
 
 When you are using the bookmarklet, eval(see.here) calls
 may not be present in the code, but it is possible to insert the
