@@ -106,6 +106,7 @@
 (function() {
 
 var seepkg = 'see'; // Defines the global package name used.
+var version = '0.1';
 var oldvalue = noteoldvalue(seepkg);
 // Option defaults
 var $ = window.jQuery;
@@ -127,6 +128,13 @@ var scopes = {
 };
 var coffeescript = window.CoffeeScript;
 var seejs = '(function(){return eval(arguments[0]);})';
+
+// If see has already been loaded, then return without doing anything.
+if (window.see && window.see.js && window.see.js == seejs &&
+    window.see.version == version) {
+  return;
+}
+
 
 function init(options) {
   if (arguments.length === 0) {
@@ -211,6 +219,7 @@ function exportsee() {
   see.here = 'eval(' + seepkg + '.init())';
   see.js = seejs;
   see.cs = '(function(){return eval(' + seepkg + '.barecs(arguments[0]));})';
+  see.version = version;
   window[seepkg] = see;
 }
 
