@@ -787,6 +787,9 @@ function updatelocalstorage(state) {
     window.localStorage[uselocalstorage] = window.JSON.stringify(stored);
   }
 }
+function wheight() {
+  return window.innerHeight || $(window).height();
+}
 function tryinitpanel() {
   if (addedpanel) {
     if (paneltitle) {
@@ -799,16 +802,20 @@ function tryinitpanel() {
   } else {
     if (!window.document.getElementById('_testlog') && window.document.body) {
       initlogcss();
+      var state = readlocalstorage();
       var titlehtml = (paneltitle ? formattitle(paneltitle) : '');
+      if (state.height > wheight() - 50) {
+        state.height = Math.min(wheight(), Math.max(10, wheight() - 50));
+      }
       $('body').prepend(
         '<div id="_testpanel" style="overflow:hidden;' +
-            'position:fixed;bottom:0;left:0;width:100%;height:' + panelheight +
+            'position:fixed;bottom:0;left:0;width:100%;height:' + state.height +
             'px;background:whitesmoke;font:10pt monospace;">' +
           '<div id="_testdrag" style="' +
               'cursor:row-resize;height:6px;width:100%;' +
               'background:lightgray"></div>' +
           '<div id="_testscroll" style="overflow-y:scroll;overflow-x:hidden;' +
-              'width:100%;height:' + (panelheight - 6) + 'px;">' +
+              'width:100%;height:' + (state.height - 6) + 'px;">' +
             '<div id="_testlog">' + titlehtml + '</div>' +
             '<div style="position:relative;">' +
             promptcaret('blue') +
@@ -817,7 +824,6 @@ function tryinitpanel() {
            '</div>' +
         '</div>');
       addedpanel = true;
-      var state = readlocalstorage();
       flushqueue();
       var historyindex = 0;
       var historyedited = {};
@@ -887,7 +893,7 @@ function tryinitpanel() {
         if (drag.setCapture) { drag.setCapture(true); }
         dragfunc = function dragresize(e) {
           if (e.type != 'blur' && e.which == dragwhich) {
-            var winheight = window.innerHeight || $(window).height();
+            var winheight = wheight();
             var newheight = Math.max(barheight, Math.min(winheight,
                 dragsum - e.pageY));
             var complete = stickscroll();
