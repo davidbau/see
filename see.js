@@ -135,6 +135,38 @@ if (window.see && window.see.js && window.see.js == seejs &&
   return;
 }
 
+var pulljQuery = function(callback) {
+  if ($ && $.fn && $.fn.jquery) {
+    callback();
+    return;
+  }
+  function loadscript(src, callback) {
+    function setonload(script, fn) {
+      script.onload = script.onreadystatechange = fn;
+    }
+    var script = document.createElement("script"),
+       head = document.getElementsByTagName("head")[0],
+       pending = 1;
+    setonload(script, function() {
+      if (pending && (!script.readyState ||
+          {loaded:1,complete:1}[script.readyState])) {
+        pending = 0;
+        callback();
+        setonload(script, null);
+        head.removeChild(script);
+      }
+    });
+    script.src = src;
+    head.appendChild(script);
+  }
+  loadscript(
+      '//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js',
+      function() {
+    $ = jQuery.noConflict(true);
+    callback();
+  });
+}
+
 
 function init(options) {
   if (arguments.length === 0) {
@@ -164,7 +196,7 @@ function init(options) {
     // panel overrides element and autoscroll.
     logelement = '#_testlog';
     autoscroll = '#_testscroll';
-    loadjQueryIfNotPresent(tryinitpanel);
+    pulljQuery(tryinitpanel);
   }
   return scope();
 }
@@ -252,38 +284,6 @@ function noconflict(newname) {
   return see;
 }
 
-function loadjQueryIfNotPresent(callback) {
-  if ($ && $.fn && $.fn.jquery) {
-    callback();
-    return;
-  }
-  function loadscript(src, callback) {
-    function setonload(script, fn) {
-      script.onload = script.onreadystatechange = fn;
-    }
-    var script = document.createElement("script"),
-       head = document.getElementsByTagName("head")[0],
-       pending = 1;
-    setonload(script, function() {
-      if (pending && (!script.readyState ||
-          {loaded:1,complete:1}[script.readyState])) {
-        pending = 0;
-        callback();
-        setonload(script, null);
-        head.removeChild(script);
-      }
-    });
-    script.src = src;
-    head.appendChild(script);
-  }
-  loadscript(
-      '//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js',
-      function() {
-    $ = jQuery.noConflict(true);
-    callback();
-  });
-}
-
 // ---------------------------------------------------------------------
 // LOG FUNCTION SUPPORT
 // ---------------------------------------------------------------------
@@ -322,7 +322,6 @@ function loghtml(html) {
   flushqueue();
 }
 
-
 function vtype(obj) {
   var bracketed = Object.prototype.toString.call(obj);
   var vt = bracketed.substring(8, bracketed.length - 1);
@@ -333,6 +332,7 @@ function vtype(obj) {
   }
   return vt;
 }
+
 function isprimitive(vt) {
   switch (vt) {
     case 'String':
@@ -346,18 +346,20 @@ function isprimitive(vt) {
   }
   return false;
 }
+
 function isdom(obj) {
   return (obj.nodeType && obj.nodeName && typeof(obj.cloneNode) == 'function');
 }
+
 function midtruncate(s, maxlen) {
-  if (maxlen && s.length > maxlen) {
-    return s.substring(0, Math.floor(maxlen / 2)) + '...' +
-        s.substring(s.length - Math.floor(maxlen / 2));
+  if (maxlen && maxlen > 3 && s.length > maxlen) {
+    return s.substring(0, Math.floor(maxlen / 2) - 1) + '...' +
+        s.substring(s.length - Math.ceil(maxlen / 2) - 2);
   }
   return s;
 }
+
 function cstring(s, maxlen) {
-  s = midtruncate(s, maxlen);
   function cescape(c) {
     if (cescapes.hasOwnProperty(c)) {
       return cescapes[c];
@@ -366,9 +368,11 @@ function cstring(s, maxlen) {
     return '\\x' + temp.substring(temp.length - 2);
   }
   if (s.indexOf('"') == -1 || s.indexOf('\'') != -1) {
-    return '"' + htmlescape(s.replace(/[\0-\x1f\x7f-\x9f"\\]/g, cescape)) + '"';
+    return midtruncate('"' +
+        htmlescape(s.replace(/[\0-\x1f\x7f-\x9f"\\]/g, cescape)) + '"', maxlen);
   } else {
-    return "'" + htmlescape(s.replace(/[\0-\x1f\x7f-\x9f'\\]/g, cescape)) + "'";
+    return midtruncate("'" +
+        htmlescape(s.replace(/[\0-\x1f\x7f-\x9f'\\]/g, cescape)) + "'", maxlen);
   }
 }
 function tiny(obj, maxlen) {
