@@ -741,12 +741,61 @@ function getSelectedText(){
     else if(document.selection) {
         return document.selection.createRange().text; }
 }
+function formattitle(title) {
+  return '<div class="_log" id="_testpaneltitle" style="font-weight:bold;">' +
+      title + '</div>';
+}
+function readlocalstorage() {
+  if (!uselocalstorage) {
+    return;
+  }
+  var state = { height: panelheight, history: [] };
+  try {
+    var result = window.JSON.parse(window.localStorage[uselocalstorage]);
+    if (result && result.slice && result.length) {
+      // if result is an array, then it's just the history.
+      state.history = result;
+      return state;
+    }
+    $.extend(state, result);
+  } catch(e) {
+  }
+  return state;
+}
+function updatelocalstorage(state) {
+  if (!uselocalstorage) {
+    return;
+  }
+  var stored = readlocalstorage(), changed = false;
+  if ('history' in state &&
+      state.history.length &&
+      (!stored.history.length ||
+      stored.history[stored.history.length - 1] !==
+      state.history[state.history.length - 1])) {
+    stored.history.push(state.history[state.history.length - 1]);
+    changed = true;
+  }
+  if ('height' in state && state.height !== stored.height) {
+    stored.height = state.height;
+    changed = true;
+  }
+  if (changed) {
+    window.localStorage[uselocalstorage] = window.JSON.stringify(stored);
+  }
+}
 function tryinitpanel() {
-  if (!addedpanel) {
+  if (addedpanel) {
+    if (paneltitle) {
+      if ($('#_testpaneltitle').length) {
+        $('#_testpaneltitle').html(paneltitle);
+      } else {
+        $('#_testlog').prepend(formattitle(paneltitle));
+      }
+    }
+  } else {
     if (!window.document.getElementById('_testlog') && window.document.body) {
       initlogcss();
-      var titlehtml = (paneltitle ?
-        '<div class="_log" style="color:gray;">' + paneltitle + '</div>' : '');
+      var titlehtml = (paneltitle ? formattitle(paneltitle) : '');
       $('body').prepend(
         '<div id="_testpanel" style="overflow:hidden;' +
             'position:fixed;bottom:0;left:0;width:100%;height:' + panelheight +
@@ -764,12 +813,7 @@ function tryinitpanel() {
            '</div>' +
         '</div>');
       addedpanel = true;
-      var history = [];
-      if (uselocalstorage) {
-        try {
-          history = window.JSON.parse(window.localStorage[uselocalstorage]);
-        } catch (e) { }
-      }
+      var state = readlocalstorage();
       flushqueue();
       var historyindex = 0;
       var historyedited = {};
@@ -780,14 +824,10 @@ function tryinitpanel() {
           $(this).val('');
           // Save (nonempty, nonrepeated) commands to history and localStorage.
           if (text.trim().length &&
-              (history.length === 0 || history[history.length - 1] != text)) {
-            history.push(text);
-            if (uselocalstorage) {
-              try {
-                window.localStorage[uselocalstorage] =
-                    window.JSON.stringify(history);
-              } catch (e) { }
-            }
+              (!state.history.length ||
+               state.history[state.history.length - 1] !== text)) {
+            state.history.push(text);
+            updatelocalstorage({ history: [text] });
           }
           // Reset up/down history browse state.
           historyedited = {};
@@ -827,7 +867,7 @@ function tryinitpanel() {
           historyindex = Math.max(0, Math.min(history.length, historyindex));
           // Show the remembered command at that slot.
           var newval = historyedited[historyindex] ||
-              history[history.length - historyindex];
+              state.history[state.history.length - historyindex];
           if (typeof newval == 'undefined') { newval = ''; }
           $(this).val(newval);
           this.selectionStart = this.selectionEnd = newval.length;
@@ -855,8 +895,12 @@ function tryinitpanel() {
               e.type == 'mousemove' && e.which != dragwhich) {
             $(window).off('mousemove mouseup blur', dragfunc);
             if (document.releaseCapture) { document.releaseCapture(); }
+            if ($('#_testpanel').height() != state.height) {
+              state.height = $('#_testpanel').height();
+              updatelocalstorage({ height: state.height });
+            }
           }
-        }
+        };
         $(window).on('mousemove mouseup blur', dragfunc);
         return false;
       });
