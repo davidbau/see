@@ -70,7 +70,7 @@
 // eval(see.init());         // Sets the default scope to local scope.
 // eval(see.scope('name'));  // Type ":name" in the panel to use this scope.
 // see(a, b, c);             // Logs values into the panel.
-// see.loghtml('<b>ok</b>'); // Logs HTML without escaping.
+// see.html('<b>ok</b>');    // Logs HTML without escaping.
 // r = see.repr(a, 3);       // Builds a tree representation of a to depth 3.
 // x = see.noconflict();     // Relinquishes the 'see' global name; use 'x'.
 //
@@ -243,7 +243,7 @@ function barecs(s) {
 
 function exportsee() {
   see.repr = repr;
-  see.loghtml = loghtml;
+  see.html = loghtml;
   see.noconflict = noconflict;
   see.init = init;
   see.scope = scope;
