@@ -106,7 +106,7 @@
 (function() {
 
 var seepkg = 'see'; // Defines the global package name used.
-var version = '0.1';
+var version = '0.2';
 var oldvalue = noteoldvalue(seepkg);
 // Option defaults
 var $ = window.jQuery;
@@ -330,6 +330,9 @@ function vtype(obj) {
     if ('length' in obj && 'slice' in obj && 'number' == typeof obj.length) {
       return 'Array';
     }
+    if ('originalEvent' in obj && 'target' in obj && 'type' in obj) {
+      return vtype(obj.originalEvent);
+    }
   }
   return vt;
 }
@@ -355,7 +358,7 @@ function isdom(obj) {
 function midtruncate(s, maxlen) {
   if (maxlen && maxlen > 3 && s.length > maxlen) {
     return s.substring(0, Math.floor(maxlen / 2) - 1) + '...' +
-        s.substring(s.length - Math.ceil(maxlen / 2) - 2);
+        s.substring(s.length - (Math.ceil(maxlen / 2) - 2));
   }
   return s;
 }
