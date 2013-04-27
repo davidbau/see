@@ -1,4 +1,4 @@
-// see.js version 0.1
+// see.js version 0.2
 //
 // see.js: See and debug local variables.
 //
@@ -191,12 +191,13 @@ function init(options) {
   if (options.hasOwnProperty('console')) { logconsole = options.console; }
   if (options.hasOwnProperty('history')) { uselocalstorage = options.history; }
   if (options.hasOwnProperty('coffee')) { coffeescript = options.coffee; }
+  if (options.hasOwnProperty('abbreviate')) { abbreviate = options.abbreviate; }
   if (options.hasOwnProperty('noconflict')) { noconflict(options.noconflict); }
   if (panel) {
     // panel overrides element and autoscroll.
     logelement = '#_testlog';
     autoscroll = '#_testscroll';
-    pulljQuery(tryinitpanel);
+    pulljQuery ? pulljQuery(tryinitpanel) : tryinitpanel();
   }
   return scope();
 }
@@ -727,6 +728,7 @@ function flushqueue() {
 // ---------------------------------------------------------------------
 var addedpanel = false;
 var inittesttimer = null;
+var abbreviate = [{}.undefined];
 
 function show(flag) {
   if (arguments.length === 0 || flag) {
@@ -862,7 +864,10 @@ function tryinitpanel() {
           // Actually execute the command and log the results (or error).
           try {
             var result = seeeval(currentscope, text);
-            if ((typeof result) != 'undefined') {
+            for (var j = abbreviate.length - 1; j >= 0; --j) {
+              if (result === abbreviate[j]) break;
+            }
+            if (j < 0) {
               loghtml(repr(result));
             }
           } catch (e) {
