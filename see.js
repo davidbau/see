@@ -279,7 +279,8 @@ function pulljQuery(callback) {
     head.appendChild(script);
   }
   loadscript(
-      '//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js',
+      '//ajax.googleapis.com/ajax/libs/jquery/' +
+      pulljQueryVersion + '/jquery.min.js',
       function() {
     $ = jQuery.noConflict(true);
     callback();
