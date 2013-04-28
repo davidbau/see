@@ -815,7 +815,7 @@ function tryinitpanel() {
       $('body').prepend(
         '<div id="_testpanel" style="overflow:hidden;' +
             'position:fixed;bottom:0;left:0;width:100%;height:' + state.height +
-            'px;background:whitesmoke;font:10pt monospace;">' +
+            'px;background:rgba(235,235,235,0.5);font:10pt monospace;">' +
           '<div id="_testdrag" style="' +
               'cursor:row-resize;height:6px;width:100%;' +
               'background:lightgray"></div>' +
