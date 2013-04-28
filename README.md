@@ -23,7 +23,7 @@ added see line:
 (function() {
   var private_var = 0;
   function myclosuremaker() {
-    <b>eval(see.here);</b>  // Debug variables visible in this scope.
+    <mark>eval(see.here);</mark>  // Debug variables visible in this scope.
     var counter = 0;
     return function() { ++counter; }
   }
@@ -100,6 +100,8 @@ moment when the object is logged.
 see(a, b, c);
 </pre>
 
+The panel can be cleared with see.clear().
+
 
 Using the regular debugger
 --------------------------
@@ -142,6 +144,7 @@ Options to pass to init
 <tr><td>autoscroll</td><td>(if panel is false) - The element to autoscroll to bottom.</td></tr>
 <tr><td>jQuery</td><td>A local copy of jQuery to reuse instead of loading one.</td></tr>
 <tr><td>coffee</td><td>The CoffeeScript compiler object, for coffeescript support.</td></tr>
+<tr><td>abbreviate</td><td>Array of return values (e.g. undefined) to silence in interaction.</td></tr>
 <tr><td>noconflict</td><td>Name to use instead of "see".</td></tr>
 </table>
 
