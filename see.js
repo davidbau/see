@@ -964,7 +964,8 @@ function tryinitpanel() {
           historyedited[historyindex] = $(this).val();
           // Advance the history index up or down, pegged at the boundaries.
           historyindex += (e.which == 38 ? 1 : -1);
-          historyindex = Math.max(0, Math.min(history.length, historyindex));
+          historyindex = Math.max(0, Math.min(state.history.length,
+              historyindex));
           // Show the remembered command at that slot.
           var newval = historyedited[historyindex] ||
               state.history[state.history.length - historyindex];
